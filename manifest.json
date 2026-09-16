@@ -1,0 +1,40 @@
+{
+  "manifest_version": 3,
+  "name": "CodeBrowser",
+  "version": "0.1.0",
+  "description": "Captura código de chats web de IA e aterra-o num workspace local após aprovação.",
+  "permissions": ["storage", "sidePanel", "activeTab", "windows"],
+  "host_permissions": [
+    "https://chatgpt.com/*",
+    "https://chat.openai.com/*",
+    "https://grok.com/*",
+    "https://x.com/*",
+    "https://chat.qwen.ai/*",
+    "https://chat.deepseek.com/*",
+    "http://127.0.0.1:11434/*"
+  ],
+  "background": {
+    "service_worker": "sw.js",
+    "type": "module"
+  },
+  "side_panel": {
+    "default_path": "src/ui/sidepanel.html"
+  },
+  "action": {
+    "default_title": "CodeBrowser"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://chatgpt.com/*",
+        "https://chat.openai.com/*",
+        "https://grok.com/*",
+        "https://x.com/*",
+        "https://chat.qwen.ai/*",
+        "https://chat.deepseek.com/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
