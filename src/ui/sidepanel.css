@@ -87,6 +87,14 @@ pre.code {
 .terminal .wait { color: var(--wait); }
 .terminal .info, .terminal .debug { color: #9aa89e; }
 
+.issues {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  color: var(--err);
+  font-size: 11px;
+}
+.issues li { margin: 2px 0; }
+
 input[type="text"] {
   flex: 1;
   background: #070b0e;

@@ -8,7 +8,9 @@
     "dev": "vite build --watch",
     "build": "vite build && node scripts/postbuild.mjs",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "verify": "npm run typecheck && npm test && npm run build"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.287",

@@ -3,6 +3,7 @@ import type { CodeBlock } from "../types/block";
 import type { ExtensionMessage } from "../types/messages";
 import type { IntegrationPlan } from "../types/plan";
 import { formatLine } from "../activity/format";
+import { applyPlan } from "../orchestrator/apply-plan";
 import { planBlock } from "../orchestrator/planner";
 import { Workspace } from "../workspace/fs-access";
 
@@ -65,54 +66,88 @@ async function renderBlock(block: CodeBlock): Promise<void> {
     ),
   );
 
+  const issues = [
+    ...plan.errors.map((e) => `Erro: ${e}`),
+    ...plan.warnings.map((w) => `Aviso: ${w}`),
+  ];
+  const issueBox = document.createElement("ul");
+  issueBox.className = "issues";
+  for (const item of issues) {
+    const li = document.createElement("li");
+    li.textContent = item;
+    issueBox.appendChild(li);
+  }
+
   const card = document.createElement("article");
   card.className = "card";
-  card.innerHTML = `
-    <header>
-      <strong>${escapeHtml(plan.path)}</strong>
-      <div class="meta">${escapeHtml(block.platform)} · ${escapeHtml(block.language)} · ${escapeHtml(plan.action)} · ${plan.fromModel ? "qwen-coder" : "local"}</div>
-    </header>
-    <div class="row">
-      <input type="text" value="${escapeHtml(plan.path)}" data-path="${escapeHtml(block.id)}" />
-    </div>
-    <pre class="code">${escapeHtml(block.code.slice(0, 4000))}</pre>
-    <div class="row">
-      <button class="primary" data-approve="${escapeHtml(block.id)}">Aprovar escrita</button>
-      <button data-drop="${escapeHtml(block.id)}">Rejeitar</button>
-    </div>
-  `;
+
+  const head = document.createElement("header");
+  const title = document.createElement("strong");
+  title.textContent = plan.path;
+  const meta = document.createElement("div");
+  meta.className = "meta";
+  meta.textContent = `${block.platform} · ${block.language} · ${plan.action} · ${plan.fromModel ? "qwen-coder" : "local"}`;
+  head.append(title, meta);
+
+  const rowPath = document.createElement("div");
+  rowPath.className = "row";
+  const input = document.createElement("input");
+  input.type = "text";
+  input.value = plan.path;
+  rowPath.append(input);
+
+  const pre = document.createElement("pre");
+  pre.className = "code";
+  pre.textContent = block.code.slice(0, 4000);
+
+  const rowBtns = document.createElement("div");
+  rowBtns.className = "row";
+  const approveBtn = document.createElement("button");
+  approveBtn.className = "primary";
+  approveBtn.textContent = "Aprovar escrita";
+  approveBtn.disabled = !plan.valid;
+  const dropBtn = document.createElement("button");
+  dropBtn.textContent = "Rejeitar";
+  rowBtns.append(approveBtn, dropBtn);
+
+  card.append(head, rowPath);
+  if (issues.length) card.append(issueBox);
+  card.append(pre, rowBtns);
   inbox.prepend(card);
 
-  card.querySelector("[data-approve]")?.addEventListener("click", () => void approve(block, card));
-  card.querySelector("[data-drop]")?.addEventListener("click", () => card.remove());
+  approveBtn.addEventListener("click", () => void approve(block, card, input));
+  dropBtn.addEventListener("click", () => card.remove());
 }
 
-async function approve(block: CodeBlock, card: HTMLElement): Promise<void> {
-  if (!ws.opened) {
-    log(local("error", "fs", "abre uma pasta primeiro"));
-    return;
-  }
-  const input = card.querySelector("input") as HTMLInputElement;
+async function approve(
+  block: CodeBlock,
+  card: HTMLElement,
+  input: HTMLInputElement,
+): Promise<void> {
   const plan = plans.get(block.id);
   if (!plan) return;
-  const path = input.value.trim() || plan.path;
-  if (plan.action === "delete") {
-    const ok = confirm(`Apagar ${path}?`);
-    if (!ok) return;
-    await ws.deleteFile(path);
-    log(local("warn", "fs", `apagado ${path}`));
-    card.remove();
+  if (!plan.valid) {
+    log(local("error", "plan", "plano inválido; escrita bloqueada"));
     return;
   }
-  try {
-    if (plan.action === "append") await ws.appendFile(path, block.code);
-    else await ws.writeFile(path, block.code);
-    log(local("ok", "fs", `escrito ${path}`));
-    status.textContent = `escrito ${path}`;
-    card.remove();
-  } catch (err) {
-    log(local("error", "fs", err instanceof Error ? err.message : "falha a escrever"));
+
+  let result = await applyPlan(ws, block, plan, input.value, {});
+  if (result.needsDeleteConfirm) {
+    if (!confirm(`Apagar ${result.path}?`)) return;
+    result = await applyPlan(ws, block, plan, input.value, { confirmDelete: true });
   }
+  if (result.needsOverwriteConfirm) {
+    if (!confirm(`${result.path} já existe. Deseja substituir?`)) return;
+    result = await applyPlan(ws, block, plan, input.value, { confirmOverwrite: true });
+  }
+
+  if (!result.ok) {
+    log(local("error", "fs", result.error ?? "escrita recusada"));
+    return;
+  }
+  log(local("ok", "fs", `escrito ${result.path}`));
+  status.textContent = `escrito ${result.path}`;
+  card.remove();
 }
 
 function log(ev: ActivityEvent): void {
@@ -130,19 +165,11 @@ function local(
   platform?: string,
 ): ActivityEvent {
   return {
-    id: `ui_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+    id: `ui_${crypto.randomUUID()}`,
     ts: Date.now(),
     level,
     source,
     platform,
     message,
   };
-}
-
-function escapeHtml(s: string): string {
-  return s
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;");
 }
