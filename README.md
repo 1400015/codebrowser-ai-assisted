@@ -4,7 +4,8 @@ Extensão Chromium Manifest V3 que captura código gerado em chats web de IA (Ch
 
 Um modelo local da família **Qwen Coder** (Ollama, default `qwen2.5-coder:7b`) só escolhe o ficheiro de destino e a acção. Sintaxe, jail de path e escrita são determinísticos. Nada é executado.
 
-Documento de arquitectura: [`docs/arquitetura.md`](docs/arquitetura.md) · PDF: [`docs/arquitetura.pdf`](docs/arquitetura.pdf)
+Documento de arquitectura: [`docs/arquitetura.md`](docs/arquitetura.md)  
+Manual do código (origem, arquitectura e cada ficheiro/bloco): [`docs/manual.md`](docs/manual.md)
 
 ## O que já está nesta v0
 
@@ -26,7 +27,7 @@ Documento de arquitectura: [`docs/arquitetura.md`](docs/arquitetura.md) · PDF: 
 ## Desenvolvimento
 
 ```bash
-npm ci
+npm install
 npm test
 npm run build
 ```
@@ -45,7 +46,7 @@ A pasta `dist/` é a extensão empacotada.
 ```
 chat web → content script (debounce 600 ms)
         → service worker (hash + dedup)
-        → side panel (plano + diff textual)
+        → side panel (plano + aprovação)
         → Aprovar → File System Access escreve
 ```
 
