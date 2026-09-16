@@ -41,6 +41,7 @@ export class Workspace implements WorkspaceIO {
     return this.run(() => this.deleteFileUnlocked(path));
   }
 
+  /** Path inválido lança. Ficheiro em falta devolve null. Não misturar os dois. */
   private async readFileUnlocked(path: string): Promise<string | null> {
     assertSafePath(path);
     try {

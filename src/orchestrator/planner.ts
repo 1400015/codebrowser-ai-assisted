@@ -34,6 +34,7 @@ export function mergeRouted(
   existingPaths: string[],
   routed: { path: string; action: "create" | "update" | "append"; confidence: number; reason: string },
 ): IntegrationPlan {
+  // Abaixo de 0.3 ignora o path do modelo: o número não está calibrado.
   if (routed.confidence < 0.3) {
     return {
       ...base,
