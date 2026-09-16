@@ -9,6 +9,7 @@ export async function loadSeen(store: KeyValueStore): Promise<Set<string>> {
   return new Set(ids);
 }
 
+/** true = id novo (processar). false = duplicado. O Set em memória do SW morre com o processo. */
 export async function rememberSeen(
   store: KeyValueStore,
   seen: Set<string>,

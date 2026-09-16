@@ -1,4 +1,6 @@
+/** Paths que saem do root escolhido pelo utilizador. A FSA já os recusa; nós recusamos antes. */
 const ABSOLUTE = [/^\/+/, /^[a-zA-Z]:[\\/]/, /^~/];
+/** Política de produto: o planner não vê nem escreve nestes directórios. `.env` NÃO está aqui. */
 const BLOCKED_DIR = new Set([".git", "node_modules"]);
 const WINDOWS_RESERVED = new Set([
   "con", "prn", "aux", "nul",
@@ -13,6 +15,7 @@ export interface PathCheck {
   errors: string[];
 }
 
+/** Diagnóstico puro: normaliza e lista erros. Não inventa um path alternativo. */
 export function inspectPath(raw: string | undefined): PathCheck {
   const errors: string[] = [];
   let path = (raw ?? "").trim().replace(/\\/g, "/");
@@ -61,6 +64,7 @@ export function inspectPath(raw: string | undefined): PathCheck {
   return { path, errors: [...new Set(errors)] };
 }
 
+/** Para planeamento: se inválido, devolve fallback + erros. */
 export function jailPath(raw: string | undefined, fallback: string): PathCheck {
   const checked = inspectPath(raw);
   if (checked.errors.length === 0 && checked.path) return checked;
@@ -71,6 +75,7 @@ export function jailPath(raw: string | undefined, fallback: string): PathCheck {
   };
 }
 
+/** Recusa sem fallback. A camada FS deve usar isto. */
 export function assertSafePath(raw: string): string {
   const checked = inspectPath(raw);
   if (checked.errors.length > 0 || !checked.path) {
