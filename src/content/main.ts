@@ -5,6 +5,7 @@ import type { RawBlock } from "../types/block";
 const adapter = detectAdapter(new URL(location.href), document);
 
 if (adapter) {
+  // 600 ms sem mutações = resposta estável. Sem isto cada token gera RAW_CAPTURE.
   const watchdog = createWatchdog(600, scan);
   const obs = new MutationObserver(() => watchdog.kick());
   obs.observe(document.body, { childList: true, subtree: true, characterData: true });

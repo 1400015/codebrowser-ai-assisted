@@ -12,6 +12,11 @@ export interface ApplyPlanResult {
   needsDeleteConfirm?: boolean;
 }
 
+/**
+ * Único caminho de escrita do produto.
+ * A UI pode editar o path: por isso `requestedPath` volta a passar por inspectPath
+ * mesmo que o plano já tivesse sido jailed. Não chamar Workspace.writeFile a partir da UI.
+ */
 export async function applyPlan(
   workspace: WorkspaceIO,
   block: CodeBlock,
