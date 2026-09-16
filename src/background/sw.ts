@@ -4,8 +4,9 @@ import type { ExtensionMessage } from "../types/messages";
 import { blockId } from "../capture/hash";
 import { fallbackName, jailPath } from "../orchestrator/path-jail";
 import { newId } from "../activity/format";
-
-const seen = new Set<string>();
+import { chromeLocal, chromeSession } from "../persist/kv";
+import { loadSeen, rememberSeen } from "../persist/seen";
+import { appendHistory } from "../persist/history";
 
 chrome.runtime.onInstalled.addListener(() => {
   chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => undefined);
@@ -39,15 +40,17 @@ async function handle(message: ExtensionMessage): Promise<unknown> {
 }
 
 async function onCapture(payload: RawCapturePayload): Promise<void> {
+  const session = chromeSession();
+  const seen = await loadSeen(session);
   const blocks: CodeBlock[] = [];
+
   for (const raw of payload.blocks) {
     const guessed = raw.explicitPath || fallbackName(raw.language || "text");
     const jailed = jailPath(guessed, fallbackName(raw.language || "text"));
     const action = raw.actionHint ?? "create";
     const id = await blockId(jailed.path, action, raw.code);
-    if (seen.has(id)) continue;
-    seen.add(id);
-    blocks.push({
+    if (!(await rememberSeen(session, seen, id))) continue;
+    const block: CodeBlock = {
       id,
       language: raw.language || "text",
       path: jailed.path,
@@ -56,6 +59,15 @@ async function onCapture(payload: RawCapturePayload): Promise<void> {
       source: raw.source,
       platform: payload.platform,
       capturedAt: Date.now(),
+    };
+    blocks.push(block);
+    await appendHistory(chromeLocal(), {
+      blockId: id,
+      path: block.path,
+      action: block.action,
+      platform: block.platform,
+      status: "captured",
+      ts: block.capturedAt,
     });
   }
 
@@ -72,8 +84,7 @@ async function onCapture(payload: RawCapturePayload): Promise<void> {
 
   const stored = await chrome.storage.session.get("blocks");
   const prev = (stored.blocks as CodeBlock[] | undefined) ?? [];
-  const next = [...prev, ...blocks].slice(-100);
-  await chrome.storage.session.set({ blocks: next });
+  await chrome.storage.session.set({ blocks: [...prev, ...blocks].slice(-100) });
   relay({ type: "BLOCKS_READY", payload: { blocks } });
 }
 

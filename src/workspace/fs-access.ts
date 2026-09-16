@@ -1,8 +1,10 @@
 import { assertSafePath } from "../orchestrator/path-jail";
 import type { WorkspaceIO } from "./io";
+import { createQueue } from "./queue";
 
 export class Workspace implements WorkspaceIO {
   private root: FileSystemDirectoryHandle | null = null;
+  private readonly run = createQueue();
 
   get opened(): boolean {
     return this.root !== null;
@@ -30,19 +32,39 @@ export class Workspace implements WorkspaceIO {
   }
 
   async writeFile(path: string, content: string): Promise<void> {
+    return this.run(() => this.writeFileUnlocked(path, content));
+  }
+
+  async appendFile(path: string, content: string): Promise<void> {
+    return this.run(async () => {
+      const existing = (await this.readFileUnlocked(path)) ?? "";
+      const joined = existing ? `${existing.replace(/\s+$/, "")}\n${content}` : content;
+      await this.writeFileUnlocked(path, joined);
+    });
+  }
+
+  async deleteFile(path: string): Promise<void> {
+    return this.run(() => this.deleteFileUnlocked(path));
+  }
+
+  private async readFileUnlocked(path: string): Promise<string | null> {
+    try {
+      const handle = await this.fileHandle(path, false);
+      const file = await handle.getFile();
+      return await file.text();
+    } catch {
+      return null;
+    }
+  }
+
+  private async writeFileUnlocked(path: string, content: string): Promise<void> {
     const handle = await this.fileHandle(path, true);
     const w = await handle.createWritable();
     await w.write(content);
     await w.close();
   }
 
-  async appendFile(path: string, content: string): Promise<void> {
-    const existing = (await this.readFile(path)) ?? "";
-    const joined = existing ? `${existing.replace(/\s+$/, "")}\n${content}` : content;
-    await this.writeFile(path, joined);
-  }
-
-  async deleteFile(path: string): Promise<void> {
+  private async deleteFileUnlocked(path: string): Promise<void> {
     if (!this.root) throw new Error("workspace fechado");
     const safe = assertSafePath(path);
     const parts = safe.split("/");
