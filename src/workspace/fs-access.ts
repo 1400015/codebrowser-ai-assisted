@@ -1,4 +1,7 @@
-export class Workspace {
+import { assertSafePath } from "../orchestrator/path-jail";
+import type { WorkspaceIO } from "./io";
+
+export class Workspace implements WorkspaceIO {
   private root: FileSystemDirectoryHandle | null = null;
 
   get opened(): boolean {
@@ -41,21 +44,27 @@ export class Workspace {
 
   async deleteFile(path: string): Promise<void> {
     if (!this.root) throw new Error("workspace fechado");
-    const parts = path.split("/");
+    const safe = assertSafePath(path);
+    const parts = safe.split("/");
     const name = parts.pop();
     if (!name) throw new Error("path inválido");
     let dir = this.root;
-    for (const part of parts) dir = await dir.getDirectoryHandle(part);
+    for (const part of parts) {
+      dir = await dir.getDirectoryHandle(part);
+    }
     await dir.removeEntry(name);
   }
 
   private async fileHandle(path: string, create: boolean): Promise<FileSystemFileHandle> {
     if (!this.root) throw new Error("workspace fechado");
-    const parts = path.split("/");
+    const safe = assertSafePath(path);
+    const parts = safe.split("/");
     const name = parts.pop();
     if (!name) throw new Error("path inválido");
     let dir = this.root;
-    for (const part of parts) dir = await dir.getDirectoryHandle(part, { create });
+    for (const part of parts) {
+      dir = await dir.getDirectoryHandle(part, { create });
+    }
     return dir.getFileHandle(name, { create });
   }
 }

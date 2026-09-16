@@ -25,6 +25,7 @@ export async function planBlock(
     let action = routed.action;
     if (action === "create" && exists) action = "update";
     if (action === "update" && !exists) action = "create";
+    const errors = [...base.errors, ...jailed.errors];
     return {
       ...base,
       path: jailed.path,
@@ -32,10 +33,13 @@ export async function planBlock(
       confidence: routed.confidence || base.confidence,
       reason: routed.reason || base.reason,
       fromModel: true,
-      errors: [...base.errors, ...jailed.errors],
-      valid: jailed.errors.length === 0,
+      errors,
+      valid: errors.length === 0,
     };
   } catch {
-    return { ...base, warnings: [...base.warnings, "modelo local indisponível — plano determinístico"] };
+    return {
+      ...base,
+      warnings: [...base.warnings, "modelo local indisponível — plano determinístico"],
+    };
   }
 }
