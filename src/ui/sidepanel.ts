@@ -5,6 +5,9 @@ import type { IntegrationPlan } from "../types/plan";
 import { formatLine } from "../activity/format";
 import { applyPlan } from "../orchestrator/apply-plan";
 import { planBlock } from "../orchestrator/planner";
+import { appendHistory } from "../persist/history";
+import { chromeLocal } from "../persist/kv";
+import type { BlockStatus } from "../types/status";
 import { Workspace } from "../workspace/fs-access";
 
 const inbox = document.getElementById("inbox") as HTMLElement;
@@ -84,10 +87,14 @@ async function renderBlock(block: CodeBlock): Promise<void> {
   const head = document.createElement("header");
   const title = document.createElement("strong");
   title.textContent = plan.path;
+  const badge = document.createElement("span");
+  badge.className = "status";
+  badge.dataset.role = "status";
+  setStatus(badge, plan.valid ? "planned" : "failed");
   const meta = document.createElement("div");
   meta.className = "meta";
-  meta.textContent = `${block.platform} · ${block.language} · ${plan.action} · ${plan.fromModel ? "qwen-coder" : "local"}`;
-  head.append(title, meta);
+  meta.textContent = `${block.platform} · ${block.language} · ${plan.action} · ${plan.fromModel ? "qwen-coder" : "local"} · conf ${plan.confidence.toFixed(2)}`;
+  head.append(title, badge, meta);
 
   const rowPath = document.createElement("div");
   rowPath.className = "row";
@@ -116,7 +123,11 @@ async function renderBlock(block: CodeBlock): Promise<void> {
   inbox.prepend(card);
 
   approveBtn.addEventListener("click", () => void approve(block, card, input));
-  dropBtn.addEventListener("click", () => card.remove());
+  dropBtn.addEventListener("click", () => {
+    void record(block, plan.path, plan.action, "rejected");
+    setStatus(badge, "rejected");
+    card.remove();
+  });
 }
 
 async function approve(
@@ -143,11 +154,43 @@ async function approve(
 
   if (!result.ok) {
     log(local("error", "fs", result.error ?? "escrita recusada"));
+    await record(block, result.path, plan.action, "failed");
+    const mark = card.querySelector("[data-role='status']");
+    if (mark instanceof HTMLElement) setStatus(mark, "failed");
     return;
   }
   log(local("ok", "fs", `escrito ${result.path}`));
   status.textContent = `escrito ${result.path}`;
+  await record(block, result.path, result.action, "written");
   card.remove();
+}
+
+async function record(
+  block: CodeBlock,
+  path: string,
+  action: CodeBlock["action"],
+  blockStatus: BlockStatus,
+): Promise<void> {
+  await appendHistory(chromeLocal(), {
+    blockId: block.id,
+    path,
+    action,
+    platform: block.platform,
+    status: blockStatus,
+    ts: Date.now(),
+  });
+}
+
+function setStatus(el: HTMLElement, value: BlockStatus): void {
+  el.dataset.status = value;
+  const label: Record<BlockStatus, string> = {
+    captured: "capturado",
+    planned: "pronto",
+    written: "escrito",
+    rejected: "rejeitado",
+    failed: "falhou",
+  };
+  el.textContent = label[value];
 }
 
 function log(ev: ActivityEvent): void {

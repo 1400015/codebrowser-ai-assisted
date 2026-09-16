@@ -61,6 +61,21 @@ button:disabled { opacity: 0.45; cursor: default; }
 }
 .card header { background: none; border: 0; padding: 0 0 6px; }
 .meta { font-size: 11px; color: var(--muted); }
+.status {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: #1a242c;
+  color: var(--muted);
+}
+.status[data-status="planned"] { color: var(--wait); }
+.status[data-status="written"] { color: var(--accent); }
+.status[data-status="failed"],
+.status[data-status="rejected"] { color: var(--err); }
 pre.code {
   margin: 8px 0;
   max-height: 140px;
