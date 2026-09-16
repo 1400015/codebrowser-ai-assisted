@@ -1,0 +1,98 @@
+:root {
+  --bg: #0b0f14;
+  --panel: #12181f;
+  --ink: #e7eee8;
+  --muted: #7d8a82;
+  --accent: #3dba8b;
+  --warn: #e3b341;
+  --err: #e05a5a;
+  --wait: #6aa7e8;
+  --line: #1d262e;
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); }
+
+.app {
+  display: grid;
+  grid-template-rows: auto auto 1fr 220px;
+  height: 100%;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+}
+
+header h1 { font-size: 13px; margin: 0; letter-spacing: 0.04em; text-transform: uppercase; }
+header span { color: var(--muted); font-size: 11px; }
+
+.toolbar {
+  display: flex;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+button {
+  background: #1a242c;
+  color: var(--ink);
+  border: 1px solid #2a3640;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+button.primary { background: var(--accent); color: #062016; border-color: transparent; font-weight: 600; }
+button:disabled { opacity: 0.45; cursor: default; }
+
+.inbox { overflow: auto; padding: 8px 12px; }
+.card {
+  border: 1px solid var(--line);
+  background: var(--panel);
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 8px;
+}
+.card header { background: none; border: 0; padding: 0 0 6px; }
+.meta { font-size: 11px; color: var(--muted); }
+pre.code {
+  margin: 8px 0;
+  max-height: 140px;
+  overflow: auto;
+  background: #070b0e;
+  padding: 8px;
+  border-radius: 6px;
+  font: 11px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: pre-wrap;
+}
+.row { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.terminal {
+  border-top: 1px solid var(--line);
+  background: #070b0e;
+  font: 11px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
+  overflow: auto;
+  padding: 8px 12px;
+  color: #c8d6cc;
+}
+.terminal .ok { color: var(--accent); }
+.terminal .warn { color: var(--warn); }
+.terminal .error { color: var(--err); }
+.terminal .wait { color: var(--wait); }
+.terminal .info, .terminal .debug { color: #9aa89e; }
+
+input[type="text"] {
+  flex: 1;
+  background: #070b0e;
+  color: var(--ink);
+  border: 1px solid #2a3640;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font: 12px ui-monospace, monospace;
+}

@@ -1,0 +1,10 @@
+{
+  "id": "deepseek",
+  "name": "DeepSeek",
+  "hosts": ["chat.deepseek.com"],
+  "assistant": ["div.ds-markdown", ".markdown-body"],
+  "streaming": ["[class*='streaming']"],
+  "composer": ["textarea#chat-input", "textarea"],
+  "codeBlock": ["pre code"],
+  "languageLabel": ["pre span"]
+}

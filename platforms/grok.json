@@ -1,0 +1,10 @@
+{
+  "id": "grok",
+  "name": "Grok",
+  "hosts": ["grok.com", "x.com"],
+  "assistant": ["article"],
+  "streaming": ["[data-streaming='true']"],
+  "composer": ["textarea", "div[contenteditable='true']"],
+  "codeBlock": ["pre code"],
+  "languageLabel": ["pre span"]
+}

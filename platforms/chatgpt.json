@@ -1,0 +1,10 @@
+{
+  "id": "chatgpt",
+  "name": "ChatGPT",
+  "hosts": ["chatgpt.com", "chat.openai.com"],
+  "assistant": ["[data-message-author-role='assistant']"],
+  "streaming": ["[data-is-streaming='true']"],
+  "composer": ["#prompt-textarea"],
+  "codeBlock": ["pre code"],
+  "languageLabel": ["pre [class*='language']"]
+}

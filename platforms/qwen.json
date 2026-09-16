@@ -1,0 +1,10 @@
+{
+  "id": "qwen",
+  "name": "Qwen",
+  "hosts": ["chat.qwen.ai", "qianwen.aliyun.com", "www.qianwen.com"],
+  "assistant": ["article"],
+  "streaming": ["[data-streaming='true']"],
+  "composer": ["textarea"],
+  "codeBlock": ["pre code"],
+  "languageLabel": ["pre span"]
+}
