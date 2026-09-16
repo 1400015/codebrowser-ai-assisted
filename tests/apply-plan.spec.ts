@@ -73,9 +73,11 @@ describe("applyPlan", () => {
     expect(git.ok).toBe(false);
   });
 
-  it("Workspace em memória também recusa escrita directa insegura", async () => {
+  it("Workspace em memória também recusa escrita e leitura directa insegura", async () => {
     const ws = new MemoryWorkspace();
     await expect(ws.writeFile("../x", "no")).rejects.toThrow();
     await expect(ws.deleteFile("/tmp/x")).rejects.toThrow();
+    await expect(ws.readFile("../x")).rejects.toThrow();
+    await expect(ws.readFile("src/missing.ts")).resolves.toBeNull();
   });
 });

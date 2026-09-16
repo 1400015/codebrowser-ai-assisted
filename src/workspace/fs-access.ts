@@ -22,13 +22,7 @@ export class Workspace implements WorkspaceIO {
   }
 
   async readFile(path: string): Promise<string | null> {
-    try {
-      const handle = await this.fileHandle(path, false);
-      const file = await handle.getFile();
-      return await file.text();
-    } catch {
-      return null;
-    }
+    return this.readFileUnlocked(path);
   }
 
   async writeFile(path: string, content: string): Promise<void> {
@@ -48,12 +42,15 @@ export class Workspace implements WorkspaceIO {
   }
 
   private async readFileUnlocked(path: string): Promise<string | null> {
+    assertSafePath(path);
     try {
       const handle = await this.fileHandle(path, false);
       const file = await handle.getFile();
       return await file.text();
-    } catch {
-      return null;
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "NotFoundError") return null;
+      if (err instanceof Error && /não encontrado|not found/i.test(err.message)) return null;
+      throw err;
     }
   }
 

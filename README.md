@@ -4,7 +4,7 @@ Extensão Chromium Manifest V3 que captura código gerado em chats web de IA (Ch
 
 Um modelo local da família **Qwen Coder** (Ollama, default `qwen2.5-coder:7b`) só escolhe o ficheiro de destino e a acção. Sintaxe, jail de path e escrita são determinísticos. Nada é executado.
 
-Documento de arquitectura: [`docs/arquitetura.md`](docs/arquitetura.md)
+Documento de arquitectura: [`docs/arquitetura.md`](docs/arquitetura.md) · PDF: [`docs/arquitetura.pdf`](docs/arquitetura.pdf)
 
 ## O que já está nesta v0
 
@@ -26,7 +26,7 @@ Documento de arquitectura: [`docs/arquitetura.md`](docs/arquitetura.md)
 ## Desenvolvimento
 
 ```bash
-npm install
+npm ci
 npm test
 npm run build
 ```
@@ -65,11 +65,13 @@ Se o Ollama não estiver a correr, o plano determinístico continua a funcionar.
 
 - Sem execução de código capturado
 - Paths com `..` ou absolutos são rejeitados
-- `delete` pede confirmação extra
+- `.git` e `node_modules` não entram na árvore do planner e não são destinos de escrita (`.env` e `.github` são permitidos)
+- `delete` e overwrite de `create` pedem confirmação
 - Escrever exige o botão **Aprovar**
+- `readFile` de path inválido falha; ficheiro em falta devolve `null`
 
 ## Estado
 
-v0.1 — fundação. Selectors por plataforma vão partir; vivem em `platforms/*.json` para se actualizarem sem reescrever o motor.
+v0.2 — fronteiras de escrita e persistência. Selectors por plataforma vivem em `platforms/*.json`.
 
 Licença: uso privado neste repositório até se decidir o contrário.
