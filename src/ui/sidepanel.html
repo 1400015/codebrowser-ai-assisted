@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="pt">
+  <head>
+    <meta charset="utf-8" />
+    <title>CodeBrowser</title>
+    <link rel="stylesheet" href="./sidepanel.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header>
+        <h1>CodeBrowser</h1>
+        <span id="status">workspace fechado</span>
+      </header>
+      <div class="toolbar">
+        <button class="primary" id="openWs">Abrir pasta</button>
+        <button id="popup">Terminal no canto</button>
+        <button id="hintToggle">Hint opt-in: off</button>
+      </div>
+      <section class="inbox" id="inbox"></section>
+      <section class="terminal" id="term"></section>
+    </div>
+    <script type="module" src="./sidepanel.ts"></script>
+  </body>
+</html>
