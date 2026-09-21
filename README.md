@@ -1,6 +1,10 @@
-# CodeBrowser
+# CodeBrowser AI Assisted
 
-Extensão Chromium Manifest V3 que captura código gerado em chats web de IA (ChatGPT, Grok, Qwen, DeepSeek) e aterra-o num workspace local **depois de aprovação**.
+Baseado no `codebrowser`. Mesma captura e segurança (Aprovar obrigatório, jail de path, sem execução),
+mas o planner usa **modelos gratuitos do OpenRouter, escolhidos pelo utilizador**.
+
+Documento de arquitectura: [`docs/arquitetura.md`](docs/arquitetura.md)
+Manual do código: [`docs/manual.md`](docs/manual.md)
 
 Um modelo local da família **Qwen Coder** (Ollama, default `qwen2.5-coder:7b`) só escolhe o ficheiro de destino e a acção. Sintaxe, jail de path e escrita são determinísticos. Nada é executado.
 
@@ -15,8 +19,16 @@ Manual do código (origem, arquitectura e cada ficheiro/bloco): [`docs/manual.md
 - Side panel com inbox, aprovação de escrita e terminal de actividade
 - Popup de canto com o mesmo log
 - File System Access API **no side panel** (nunca no service worker)
-- Planner determinístico + chamada opcional ao Ollama
-- Testes dos parsers, jail e plano
+- Planner determinístico + Ollama local + **OpenRouter (primário → fallback configuráveis)**
+- Testes dos parsers, jail, plano e lista de modelos gratuitos
+
+## Modelos AI (novo)
+
+- Side panel → `Modelos OpenRouter gratuitos`: escolhe primário e fallback da lista `:free`.
+- Default primário: `poolside/laguna-s-2.1:free` (rápido, coding-agent). Default fallback: `openai/gpt-oss-120b:free`.
+- Coloca a chave do OpenRouter no campo `Chave API`. Sem chave, usa Ollama e depois determinístico.
+- Ordem de tentativa: `OpenRouter primário → OpenRouter fallback → Ollama → determinístico`.
+- Chave guardada só em `chrome.storage.local`. Modelos em `chrome.storage.sync`.
 
 ## Requisitos
 

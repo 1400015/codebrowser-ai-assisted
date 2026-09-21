@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "CodeBrowser",
-  "version": "0.1.0",
-  "description": "Captura código de chats web de IA e aterra-o num workspace local após aprovação.",
+  "name": "CodeBrowser AI Assisted",
+  "version": "0.2.0",
+  "description": "Captura código de chats web de IA e aterra-o num workspace local após aprovação. Com modelos gratuitos OpenRouter configuráveis.",
   "permissions": ["storage", "sidePanel", "activeTab", "windows"],
   "host_permissions": [
     "https://chatgpt.com/*",
@@ -11,6 +11,7 @@
     "https://x.com/*",
     "https://chat.qwen.ai/*",
     "https://chat.deepseek.com/*",
+    "https://openrouter.ai/*",
     "http://127.0.0.1:11434/*"
   ],
   "background": {
@@ -21,7 +22,7 @@
     "default_path": "src/ui/sidepanel.html"
   },
   "action": {
-    "default_title": "CodeBrowser"
+    "default_title": "CodeBrowser AI Assisted"
   },
   "content_scripts": [
     {

@@ -5,6 +5,9 @@ import type { IntegrationPlan } from "../types/plan";
 import { formatLine } from "../activity/format";
 import { applyPlan } from "../orchestrator/apply-plan";
 import { planBlock } from "../orchestrator/planner";
+import { FREE_MODELS } from "../orchestrator/models";
+import { testOpenRouterKey } from "../orchestrator/openrouter";
+import { loadAiSettings, saveAiSettings, type AiSettings } from "../orchestrator/settings";
 import { appendHistory } from "../persist/history";
 import { chromeLocal } from "../persist/kv";
 import type { BlockStatus } from "../types/status";
@@ -17,10 +20,18 @@ const ws = new Workspace();
 const plans = new Map<string, IntegrationPlan>();
 let hintOn = false;
 let files: string[] = [];
+let ai: AiSettings = {
+  primaryModel: "poolside/laguna-s-2.1:free",
+  fallbackModel: "openai/gpt-oss-120b:free",
+  apiKey: "",
+  mode: "auto",
+};
 
 boot();
 
 async function boot(): Promise<void> {
+  ai = await loadAiSettings();
+  initAiSettingsUI();
   const stored = await chrome.storage.session.get(["blocks", "activity"]);
   for (const ev of (stored.activity as ActivityEvent[] | undefined) ?? []) log(ev);
   for (const b of (stored.blocks as CodeBlock[] | undefined) ?? []) await renderBlock(b);
@@ -55,10 +66,75 @@ async function boot(): Promise<void> {
   });
 }
 
+function initAiSettingsUI(): void {
+  const primary = document.getElementById("primaryModel") as HTMLSelectElement | null;
+  const fallback = document.getElementById("fallbackModel") as HTMLSelectElement | null;
+  const modeSel = document.getElementById("aiMode") as HTMLSelectElement | null;
+  const keyInput = document.getElementById("openrouterKey") as HTMLInputElement | null;
+  const saveBtn = document.getElementById("saveAi");
+  const testBtn = document.getElementById("testAi");
+  const saved = document.getElementById("aiSaved");
+  if (!primary || !fallback) return;
+  for (const m of FREE_MODELS) {
+    for (const sel of [primary, fallback]) {
+      const opt = document.createElement("option");
+      opt.value = m.id;
+      opt.textContent = `${m.label} · ${m.context}`;
+      opt.title = m.notes;
+      sel.append(opt);
+    }
+  }
+  ensureOption(primary, ai.primaryModel);
+  ensureOption(fallback, ai.fallbackModel);
+  primary.value = ai.primaryModel;
+  fallback.value = ai.fallbackModel;
+  if (modeSel) modeSel.value = ai.mode;
+  if (keyInput) keyInput.value = ai.apiKey;
+  saveBtn?.addEventListener("click", async () => {
+    ai = {
+      primaryModel: primary.value,
+      fallbackModel: fallback.value,
+      apiKey: (keyInput?.value ?? "").trim(),
+      mode: modeSel?.value === "off" ? "off" : "auto",
+    };
+    await saveAiSettings(ai);
+    if (saved) saved.textContent = `guardado ${new Date().toLocaleTimeString()}`;
+    log(local("ok", "model", `AI ${ai.mode} ${ai.primaryModel} → fallback ${ai.fallbackModel}`));
+  });
+  testBtn?.addEventListener("click", async () => {
+    const key = (keyInput?.value ?? "").trim();
+    if (saved) saved.textContent = "a testar…";
+    try {
+      const msg = await testOpenRouterKey(key);
+      if (saved) saved.textContent = msg;
+      log(local("ok", "model", msg));
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "falha no teste";
+      if (saved) saved.textContent = msg;
+      log(local("error", "model", msg));
+    }
+  });
+}
+
+function ensureOption(sel: HTMLSelectElement, id: string): void {
+  if (!id) return;
+  if (Array.from(sel.options).some((o) => o.value === id)) return;
+  const opt = document.createElement("option");
+  opt.value = id;
+  opt.textContent = `${id} (custom)`;
+  sel.append(opt);
+}
+
 async function renderBlock(block: CodeBlock): Promise<void> {
   log(local("ok", "parse", `${block.path} · ${block.language} · ${block.source}`, block.platform));
-  log(local("wait", "model", "a escolher destino…", block.platform));
-  const plan = await planBlock(block, files, { enabled: true });
+  log(local("wait", "model", `a escolher destino… (${ai.mode === "off" ? "off" : shortModel(ai.primaryModel)})`, block.platform));
+  const plan = await planBlock(block, files, {
+    enabled: true,
+    mode: ai.mode,
+    openrouterModel: ai.primaryModel,
+    openrouterFallback: ai.fallbackModel,
+    openrouterKey: ai.apiKey,
+  });
   plans.set(block.id, plan);
   log(
     local(
@@ -93,7 +169,7 @@ async function renderBlock(block: CodeBlock): Promise<void> {
   setStatus(badge, plan.valid ? "planned" : "failed");
   const meta = document.createElement("div");
   meta.className = "meta";
-  meta.textContent = `${block.platform} · ${block.language} · ${plan.action} · ${plan.fromModel ? "qwen-coder" : "local"} · conf ${plan.confidence.toFixed(2)}`;
+  meta.textContent = `${block.platform} · ${block.language} · ${plan.action} · ${plan.fromModel ? shortModel(ai.primaryModel) : "local"} · conf ${plan.confidence.toFixed(2)}`;
   head.append(title, badge, meta);
 
   const rowPath = document.createElement("div");
@@ -191,6 +267,12 @@ function setStatus(el: HTMLElement, value: BlockStatus): void {
     failed: "falhou",
   };
   el.textContent = label[value];
+}
+
+function shortModel(id: string): string {
+  const parts = id.split("/");
+  const last = parts.at(-1) ?? id;
+  return last.replace(":free", "");
 }
 
 function log(ev: ActivityEvent): void {

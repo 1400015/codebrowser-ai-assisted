@@ -2,13 +2,13 @@
 <html lang="pt">
   <head>
     <meta charset="utf-8" />
-    <title>CodeBrowser</title>
+    <title>CodeBrowser AI Assisted</title>
     <link rel="stylesheet" href="./sidepanel.css" />
   </head>
   <body>
     <div class="app">
       <header>
-        <h1>CodeBrowser</h1>
+        <h1>CodeBrowser AI Assisted</h1>
         <span id="status">workspace fechado</span>
       </header>
       <div class="toolbar">
@@ -16,6 +16,32 @@
         <button id="popup">Terminal no canto</button>
         <button id="hintToggle">Hint opt-in: off</button>
       </div>
+      <details class="settings" id="aiSettings">
+        <summary>Modelos OpenRouter gratuitos</summary>
+        <div class="settings-grid">
+          <label>Provider
+            <select id="aiMode">
+              <option value="auto">auto — OpenRouter → Ollama → determinístico</option>
+              <option value="off">off — determinístico forçado</option>
+            </select>
+          </label>
+          <label>Primário (default Laguna S 2.1)
+            <select id="primaryModel"></select>
+          </label>
+          <label>Fallback (configurável)
+            <select id="fallbackModel"></select>
+          </label>
+          <label>Chave API OpenRouter
+            <input type="password" id="openrouterKey" placeholder="sk-or-..." autocomplete="off" />
+          </label>
+          <div class="row">
+            <button class="primary" id="saveAi">Guardar modelos</button>
+            <button id="testAi">Testar chave</button>
+            <span class="meta" id="aiSaved"></span>
+          </div>
+          <p class="meta">Sem chave, usa Ollama local e depois determinístico. Com chave, tenta primário → fallback → Ollama → determinístico. Modo off salta tudo para determinístico.</p>
+        </div>
+      </details>
       <section class="inbox" id="inbox"></section>
       <section class="terminal" id="term"></section>
     </div>

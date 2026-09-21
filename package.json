@@ -1,8 +1,8 @@
 {
-  "name": "codebrowser",
-  "version": "0.1.0",
+  "name": "codebrowser-ai-assisted",
+  "version": "0.2.0",
   "private": true,
-  "description": "Extensão Chromium MV3 — captura código de chats web de IA e aterra-o num workspace local.",
+  "description": "Extensão Chromium MV3 — captura código de chats web de IA e aterra-o num workspace local, com modelos gratuitos OpenRouter configuráveis.",
   "type": "module",
   "scripts": {
     "dev": "vite build --watch",
@@ -14,6 +14,7 @@
   },
   "devDependencies": {
     "@types/chrome": "^0.0.287",
+    "@types/node": "^26.6.2",
     "typescript": "^5.6.3",
     "vite": "^5.4.10",
     "vitest": "^2.1.4"
