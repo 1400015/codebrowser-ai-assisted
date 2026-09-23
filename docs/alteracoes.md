@@ -4,7 +4,7 @@ Cada alteração ao código fica registada aqui por data (mais recente primeiro)
 
 ---
 
-## 2026-09-23 — Documentação das correcções (local)
+## 2026-09-23 — Documentação das correcções (commit `8ee03d8`)
 
 **Ficheiros:** `docs/alteracoes.md` (novo), `docs/manual/orquestracao.md`, `docs/manual/escrita-ui.md`, comentários em `src/orchestrator/models.ts`, `src/orchestrator/settings.ts`, `src/ui/sidepanel.ts`, ligações no `README.md` e `docs/manual.md`.
 
@@ -12,7 +12,7 @@ Cada alteração ao código fica registada aqui por data (mais recente primeiro)
 
 ---
 
-## 2026-09-22 — Correcção de modelos OpenRouter mortos + lista ao vivo (local)
+## 2026-09-22 — Correcção de modelos OpenRouter mortos + lista ao vivo (commit `8ee03d8`)
 
 **Ficheiros:** `src/orchestrator/models.ts`, `src/orchestrator/settings.ts`, `src/ui/sidepanel.ts`, `tests/ai-models.spec.ts`, `README.md`, `package.json` (só `allowScripts` do esbuild, gerado pelo npm).
 
