@@ -19,7 +19,10 @@ export const DEFAULT_SETTINGS: AiSettings = {
 const SYNC_KEYS = ["aiPrimaryModel", "aiFallbackModel", "aiMode"] as const;
 const LOCAL_KEY = "openrouterKey";
 
-/** Normaliza valores vindos do storage. Aceita custom, UI lista :free por defeito. */
+/** Bloco — normalização de settings. Contrato: nunca lança, devolve sempre
+ * um AiSettings completo. Ids retirados da oferta `:free` (ver RETIRED_MODEL_IDS
+ * em models.ts) migram aqui para os defaults — é o ponto onde settings antigas
+ * guardadas em chrome.storage se corrigem ao carregar. */
 export function normalizeSettings(raw: Partial<AiSettings>): AiSettings {
   const mode: AiMode = raw.mode === "off" ? "off" : "auto";
   return {

@@ -5,6 +5,7 @@ mas o planner usa **modelos gratuitos do OpenRouter, escolhidos pelo utilizador*
 
 Documento de arquitectura: [`docs/arquitetura.md`](docs/arquitetura.md)
 Manual do código: [`docs/manual.md`](docs/manual.md)
+Registo de alterações: [`docs/alteracoes.md`](docs/alteracoes.md)
 
 Um modelo local da família **Qwen Coder** (Ollama, default `qwen2.5-coder:7b`) só escolhe o ficheiro de destino e a acção. Sintaxe, jail de path e escrita são determinísticos. Nada é executado.
 
@@ -22,13 +23,14 @@ Manual do código (origem, arquitectura e cada ficheiro/bloco): [`docs/manual.md
 - Planner determinístico + Ollama local + **OpenRouter (primário → fallback configuráveis)**
 - Testes dos parsers, jail, plano e lista de modelos gratuitos
 
-## Modelos AI (novo)
+## Modelos AI
 
 - Side panel → `Modelos OpenRouter gratuitos`: escolhe primário e fallback da lista `:free`.
-- Default primário: `poolside/laguna-s-2.1:free` (rápido, coding-agent). Default fallback: `openai/gpt-oss-120b:free`.
+- Default primário: `poolside/laguna-s-2.1:free` (rápido, coding-agent). Default fallback: `z-ai/glm-5.2:free`.
+- A lista de modelos é actualizada em tempo real ao abrir o side panel (endpoint público `/models`); se não houver rede, usa a lista curada local. Guarda no GitHub: a oferta `:free` do OpenRouter muda com frequência — se um modelo escolhido deixar de existir, a chamada falha e cai para o próximo da ordem.
 - Coloca a chave do OpenRouter no campo `Chave API`. Sem chave, usa Ollama e depois determinístico.
 - Ordem de tentativa: `OpenRouter primário → OpenRouter fallback → Ollama → determinístico`.
-- Chave guardada só em `chrome.storage.local`. Modelos em `chrome.storage.sync`.
+- Chave guardada só em `chrome.storage.local`. Modelos em `chrome.storage.sync`. IDs retirados da oferta `:free` são re-mapeados para os defaults ao carregar.
 
 ## Requisitos
 

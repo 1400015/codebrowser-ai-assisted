@@ -6,12 +6,13 @@ Walkthroughs detalhados (ficheiro a ficheiro, bloco a bloco):
 
 - [Arranque, tipos, worker, persistência](manual/arranque.md)
 - [Captura: parsers, platforms, content script](manual/captura.md)
-- [Orquestração: jail, planner, Ollama, applyPlan](manual/orquestracao.md)
+- [Orquestração: jail, planner, Ollama, OpenRouter, applyPlan](manual/orquestracao.md)
 - [Workspace, UI e testes](manual/escrita-ui.md)
 
 Arquitectura de produto: [`arquitetura.md`](arquitetura.md).
+Registo de alterações: [`alteracoes.md`](alteracoes.md).
 
-Versão descrita: `main` após Cortes A/B e a correcção do `readFile`.
+Versão descrita: `main` após Cortes A/B, correcção do `readFile` e funcionalidade OpenRouter (ver [`alteracoes.md`](alteracoes.md)).
 
 ---
 

@@ -5,7 +5,13 @@ import type { IntegrationPlan } from "../types/plan";
 import { formatLine } from "../activity/format";
 import { applyPlan } from "../orchestrator/apply-plan";
 import { planBlock } from "../orchestrator/planner";
-import { FREE_MODELS } from "../orchestrator/models";
+import {
+  DEFAULT_FALLBACK_MODEL,
+  DEFAULT_PRIMARY_MODEL,
+  FREE_MODELS,
+  fetchFreeModels,
+  type FreeModel,
+} from "../orchestrator/models";
 import { testOpenRouterKey } from "../orchestrator/openrouter";
 import { loadAiSettings, saveAiSettings, type AiSettings } from "../orchestrator/settings";
 import { appendHistory } from "../persist/history";
@@ -21,8 +27,8 @@ const plans = new Map<string, IntegrationPlan>();
 let hintOn = false;
 let files: string[] = [];
 let ai: AiSettings = {
-  primaryModel: "poolside/laguna-s-2.1:free",
-  fallbackModel: "openai/gpt-oss-120b:free",
+  primaryModel: DEFAULT_PRIMARY_MODEL,
+  fallbackModel: DEFAULT_FALLBACK_MODEL,
   apiKey: "",
   mode: "auto",
 };
@@ -75,21 +81,20 @@ function initAiSettingsUI(): void {
   const testBtn = document.getElementById("testAi");
   const saved = document.getElementById("aiSaved");
   if (!primary || !fallback) return;
-  for (const m of FREE_MODELS) {
-    for (const sel of [primary, fallback]) {
-      const opt = document.createElement("option");
-      opt.value = m.id;
-      opt.textContent = `${m.label} · ${m.context}`;
-      opt.title = m.notes;
-      sel.append(opt);
-    }
-  }
+  // Sequência do bloco de modelos: (1) preencher com a lista curada offline
+  // para os selects nunca ficarem vazios; (2) repor os valores guardados
+  // (loadAiSettings já migrou ids retirados para os defaults); (3) refresh
+  // em background com a lista ao vivo — sucesso substitui as opções,
+  // falha mantém a curada e registra aviso. Em ambos os casos há opções.
+  fillModelOptions(primary, FREE_MODELS);
+  fillModelOptions(fallback, FREE_MODELS);
   ensureOption(primary, ai.primaryModel);
   ensureOption(fallback, ai.fallbackModel);
   primary.value = ai.primaryModel;
   fallback.value = ai.fallbackModel;
   if (modeSel) modeSel.value = ai.mode;
   if (keyInput) keyInput.value = ai.apiKey;
+  void refreshModelList([primary, fallback]);
   saveBtn?.addEventListener("click", async () => {
     ai = {
       primaryModel: primary.value,
@@ -114,6 +119,40 @@ function initAiSettingsUI(): void {
       log(local("error", "model", msg));
     }
   });
+}
+
+/** Limpa e repõe as opções de um select a partir de uma lista de modelos.
+ * Chamar sempre antes de restaurar a seleção (replaceChildren apaga tudo). */
+function fillModelOptions(sel: HTMLSelectElement, models: FreeModel[]): void {
+  sel.replaceChildren();
+  for (const m of models) {
+    const opt = document.createElement("option");
+    opt.value = m.id;
+    opt.textContent = `${m.label} · ${m.context}`;
+    opt.title = m.notes;
+    sel.append(opt);
+  }
+}
+
+/** Actualiza os selects com a lista `:free` ao vivo do OpenRouter.
+ * Deve produzir: opções = lista de fetchFreeModels + o valor actual do
+ * utilizador (mesmo custom, via ensureOption) e seleção preservada.
+ * Sucesso → log debug com o total; falha → log warn e fica a lista curada.
+ * Nunca lança: é fire-and-forget (void) no arranque. */
+async function refreshModelList(sels: HTMLSelectElement[]): Promise<void> {
+  try {
+    const models = await fetchFreeModels();
+    const current = new Map(sels.map((s) => [s, s.value]));
+    for (const sel of sels) {
+      const keep = current.get(sel) ?? "";
+      fillModelOptions(sel, models);
+      ensureOption(sel, keep);
+      sel.value = keep;
+    }
+    log(local("debug", "model", `lista :free actualizada do OpenRouter (${models.length} modelos)`));
+  } catch (err) {
+    log(local("warn", "model", `lista de modelos offline — a usar lista local (${err instanceof Error ? err.message : "falha"})`));
+  }
 }
 
 function ensureOption(sel: HTMLSelectElement, id: string): void {
