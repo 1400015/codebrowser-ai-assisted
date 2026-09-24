@@ -4,7 +4,7 @@ Cada alteração ao código fica registada aqui por data (mais recente primeiro)
 
 ---
 
-## 2026-09-23 — Popup imediato de captura + fix do DeepSeek (local)
+## 2026-09-23 — Popup imediato de captura + fix do DeepSeek (commit `f165ca6`, validado em DeepSeek e Qwen a 2026-09-24)
 
 **Ficheiros:** `src/capture/toolbar.ts` (novo), `src/platforms/registry.ts`, `src/platforms/generic.ts`, `src/platforms/dom.ts`, `src/content/main.ts`, `src/workspace/handle-store.ts` (novo), `src/workspace/fs-access.ts`, `src/background/sw.ts`, `src/ui/capture-popup.html` (novo), `src/ui/capture-popup.ts` (novo), `src/ui/sidepanel.ts`, `src/types/platform.ts`, `src/types/messages.ts`, `vite.config.ts`, `tsconfig.json` (`resolveJsonModule`), `tests/capture-config.spec.ts` (novo), `README.md`, `docs/manual/captura.md`, `docs/manual/escrita-ui.md`.
 
