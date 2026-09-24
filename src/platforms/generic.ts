@@ -1,35 +1,61 @@
-import type { ComposerHandle, PlatformAdapter } from "../types/platform";
-import { extractBlocksFromElement } from "./dom";
+import type { ComposerHandle, PlatformAdapter, PlatformConfig } from "../types/platform";
+import { deepQuerySelectorAll, extractBlocksFromElement } from "./dom";
+import { findToolbarCodeBlocks, findToolbarCodeContainers } from "../capture/toolbar";
 
-export function makeGenericAdapter(
-  id: string,
-  name: string,
-  hosts: string[],
-): PlatformAdapter {
+/** Bloco — fábrica de adapters a partir de PlatformConfig.
+ * Semântica dos selectores: listas tentadas por ordem, o primeiro que casa
+ * ganha; nenhum casa → fallback descrito em cada método. Hosts vazios = o
+ * adapter casa com qualquer host (último recurso, ver registry). */
+export function makeConfigAdapter(cfg: PlatformConfig): PlatformAdapter {
   return {
-    id,
-    name,
+    id: cfg.id,
+    name: cfg.name,
     match(url) {
-      return hosts.some((h) => url.hostname === h || url.hostname.endsWith(`.${h}`));
+      if (!cfg.hosts.length) return true;
+      return cfg.hosts.some((h) => url.hostname === h || url.hostname.endsWith(`.${h}`));
     },
     findComposer(doc) {
-      const el =
-        (doc.querySelector("textarea") as HTMLTextAreaElement | null) ||
-        (doc.querySelector("[contenteditable='true']") as HTMLElement | null);
-      if (!el) return null;
-      return wrapComposer(el);
+      for (const sel of cfg.composer) {
+        const el = doc.querySelector(sel);
+        if (el instanceof HTMLTextAreaElement || el instanceof HTMLElement) {
+          return wrapComposer(el as HTMLElement);
+        }
+      }
+      return null;
     },
+    /** Ordem: (1) selectores da config (atravessam shadow roots); (2) `pre`
+     * com toolbar de copiar/download; (3) cartões de código pela toolbar SEM
+     * pre (caso DeepSeek 2026-09-23: bloco é componente próprio com numeração
+     * de linhas — só os botões Copiar/Descarregar/Executar o marcam); (4)
+     * último recurso — todos os `pre` (melhor capturar a mais: o popup de
+     * aprovação filtra ruído — do que ficar mudo). */
     findAssistantMessages(doc) {
-      const nodes = [...doc.querySelectorAll("article, [data-message-author-role='assistant'], pre")];
-      return nodes.filter((n): n is HTMLElement => n instanceof HTMLElement);
+      for (const sel of cfg.assistant) {
+        const elems = deepQuerySelectorAll(doc, sel).filter(
+          (n): n is HTMLElement => n instanceof HTMLElement,
+        );
+        if (elems.length) return elems;
+      }
+      const toolbar = findToolbarCodeBlocks(doc);
+      if (toolbar.length) return toolbar;
+      const cards = findToolbarCodeContainers(doc);
+      if (cards.length) return cards;
+      return deepQuerySelectorAll(doc, "pre").filter(
+        (n): n is HTMLElement => n instanceof HTMLElement,
+      );
     },
-    extractCodeBlocks(messageRoot) {
-      return extractBlocksFromElement(messageRoot);
+    extractCodeBlocks(messageRoot, opts) {
+      // Selector profundo: mensagens dentro de shadow roots também extraiem.
+      return extractBlocksFromElement(
+        messageRoot,
+        cfg.codeBlock,
+        cfg.languageLabel,
+        true,
+        opts?.cardMode ?? false,
+      );
     },
     isStreaming(messageRoot) {
-      return Boolean(
-        messageRoot.querySelector("[data-is-streaming='true'], [data-streaming='true']"),
-      );
+      return cfg.streaming.some((sel) => Boolean(messageRoot.querySelector(sel)));
     },
   };
 }

@@ -1,4 +1,4 @@
-export type CaptureSource = "xml" | "fence" | "dom";
+export type CaptureSource = "xml" | "fence" | "dom" | "copy";
 export type FileAction = "create" | "update" | "append" | "delete";
 
 export interface RawBlock {

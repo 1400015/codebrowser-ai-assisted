@@ -33,6 +33,12 @@ async function handle(message: ExtensionMessage): Promise<unknown> {
       return { ok: true };
     case "PING":
       return { ok: true };
+    case "ACTIVITY":
+      // ACTIVITY do content script passa a persistir em session storage —
+      // antes as linhas de arranque/diagnóstico morriam se o painel estivesse
+      // fechado no momento (só davam relay para páginas abertas).
+      emit(message.payload);
+      return { ok: true };
     default:
       relay(message);
       return { ok: true };
@@ -86,7 +92,56 @@ async function onCapture(payload: RawCapturePayload): Promise<void> {
   const prev = (stored.blocks as CodeBlock[] | undefined) ?? [];
   await chrome.storage.session.set({ blocks: [...prev, ...blocks].slice(-100) });
   relay({ type: "BLOCKS_READY", payload: { blocks } });
+  await maybeOpenCapturePopup();
 }
+
+const CAPTURE_POPUP_URL = "src/ui/capture-popup.html";
+const CAPTURE_WIN_KEY = "capturePopupWin";
+
+/** Bloco — popup imediato de captura. Corre SÓ quando há blocos novos
+ * (o rememberSeen acima já filtrou repetidos). Deve produzir: popup aberto
+ * ou focado com os blocos por tratar, salvo se o utilizador desligou o
+ * auto-abrir (sync `capturePopupAuto === false`). Best-effort: falhar aqui
+ * nunca perde blocos — o side panel continua a receber BLOCKS_READY. */
+async function maybeOpenCapturePopup(): Promise<void> {
+  try {
+    const sync = await chrome.storage.sync.get("capturePopupAuto");
+    if (sync.capturePopupAuto === false) return;
+
+    const s = await chrome.storage.session.get(CAPTURE_WIN_KEY);
+    const winId = s[CAPTURE_WIN_KEY] as number | undefined;
+    if (typeof winId === "number") {
+      const existing = await chrome.windows.get(winId).catch(() => null);
+      if (existing) {
+        await chrome.windows.update(winId, { focused: true });
+        return;
+      }
+    }
+    const win = await chrome.windows.create({
+      url: CAPTURE_POPUP_URL,
+      type: "popup",
+      width: 560,
+      height: 700,
+      focused: true,
+    });
+    if (typeof win.id === "number") {
+      await chrome.storage.session.set({ [CAPTURE_WIN_KEY]: win.id });
+    }
+  } catch {
+    // sem popup o fluxo do side panel continua completo
+  }
+}
+
+/** Fecha a chave de sessão quando o popup é fechado, para o próximo bloco
+ * voltar a abrir janela nova em vez de focar uma janela morta. */
+chrome.windows.onRemoved.addListener((winId) => {
+  void chrome.storage.session
+    .get(CAPTURE_WIN_KEY)
+    .then((s) => {
+      if (s[CAPTURE_WIN_KEY] === winId) return chrome.storage.session.remove(CAPTURE_WIN_KEY);
+    })
+    .catch(() => undefined);
+});
 
 function relay(message: ExtensionMessage): void {
   chrome.runtime.sendMessage(message).catch(() => undefined);

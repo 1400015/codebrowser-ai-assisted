@@ -15,13 +15,17 @@ Manual do código (origem, arquitectura e cada ficheiro/bloco): [`docs/manual.md
 ## O que já está nesta v0
 
 - Captura híbrida: DOM (`pre > code`) → fences markdown → tags `<code-block>` opcionais
+- **Captura universal via clipboard (2026-09-23)**: quando o código não está no DOM (editores Monaco virtualizados do Qwen, layouts A/B), a extensão recolhe-o no momento em que copias — botão "Copiar" do próprio bloco ou Ctrl+C — através de um hook sem permissões novas que nunca interfere com a página
+- **Heurística da toolbar (2026-09-23)**: blocos identificados também pelos botões copiar/descarregar que os chats põem em cada bloco — sinal mais estável do que classes de CSS
+- **Popup imediato de captura (2026-09-23)**: quando há código novo, um popup abre sozinho e pergunta Gravar / Intercalar / Ignorar — sem abrir o side panel (desligável com "abrir automaticamente")
+- **Adapters dirigidos por `platforms/*.json`**: quando uma plataforma muda a UI, actualiza-se o JSON, não o código. Autodiagnóstico no log se os selectores falharem (DeepSeek: `pre` com tokens Prism; Qwen: Monaco virtualizado → captura pela clipboard)
 - IDs estáveis por SHA-256 de `(path, action, code)`
 - Content scripts para ChatGPT, Grok, Qwen web e DeepSeek
 - Side panel com inbox, aprovação de escrita e terminal de actividade
 - Popup de canto com o mesmo log
-- File System Access API **no side panel** (nunca no service worker)
+- File System Access API **em páginas de extensão** (side panel e popup de captura; nunca no service worker), com a pasta guardada em IndexedDB e partilhada entre ambos
 - Planner determinístico + Ollama local + **OpenRouter (primário → fallback configuráveis)**
-- Testes dos parsers, jail, plano e lista de modelos gratuitos
+- Testes dos parsers, jail, plano, lista de modelos, configs de plataformas e heurística da toolbar
 
 ## Modelos AI
 

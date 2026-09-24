@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="pt">
+  <head>
+    <meta charset="utf-8" />
+    <title>CodeBrowser · captura</title>
+    <link rel="stylesheet" href="./sidepanel.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header>
+        <h1>Código capturado</h1>
+        <span id="status">a arrancar…</span>
+      </header>
+      <section class="inbox" id="inbox"></section>
+      <section class="terminal" id="term"></section>
+      <footer class="toolbar">
+        <label style="display:flex;align-items:center;gap:6px">
+          <input type="checkbox" id="autoOpen" checked /> abrir automaticamente
+        </label>
+        <button id="closePopup">Fechar</button>
+      </footer>
+    </div>
+    <script type="module" src="./capture-popup.ts"></script>
+  </body>
+</html>

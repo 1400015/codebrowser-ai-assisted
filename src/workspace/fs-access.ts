@@ -1,9 +1,12 @@
 import { assertSafePath } from "../orchestrator/path-jail";
 import type { WorkspaceIO } from "./io";
+import { ensurePermission, hasPermission, loadSavedRoot, saveRoot } from "./handle-store";
 import { createQueue } from "./queue";
 
 export class Workspace implements WorkspaceIO {
   private root: FileSystemDirectoryHandle | null = null;
+  /** Handle guardado cuja permissão voltou a "prompt" — à espera de gesto. */
+  private pending: FileSystemDirectoryHandle | null = null;
   private readonly run = createQueue();
 
   get opened(): boolean {
@@ -12,6 +15,37 @@ export class Workspace implements WorkspaceIO {
 
   async pick(): Promise<void> {
     this.root = await window.showDirectoryPicker({ mode: "readwrite" });
+    this.pending = null;
+    // Guarda para side panel/popup reutilizarem sem re-escolher a pasta.
+    // Best-effort: sem IndexedDB a workspace dura só a sessão actual.
+    await saveRoot(this.root);
+  }
+
+  /** Bloco — restauração silenciosa (sem gesto). Deve devolver:
+   * - "granted": root activo, listFiles já funciona;
+   * - "prompt":   handle guardado mas precisa de clique → chamar resume();
+   * - "none":     nada guardado → usar pick(). Nunca lança. */
+  async restoreSaved(): Promise<"granted" | "prompt" | "none"> {
+    const saved = await loadSavedRoot();
+    if (!saved) return "none";
+    if (await hasPermission(saved, "readwrite")) {
+      this.root = saved;
+      this.pending = null;
+      return "granted";
+    }
+    this.pending = saved;
+    return "prompt";
+  }
+
+  /** Bloco — completa restoreSaved()=="prompt" com o gesto do utilizador.
+   * true = root activo (permissão concedida ou já estava aberto). */
+  async resume(): Promise<boolean> {
+    if (this.root) return true;
+    if (!this.pending) return false;
+    if (!(await ensurePermission(this.pending, "readwrite"))) return false;
+    this.root = this.pending;
+    this.pending = null;
+    return true;
   }
 
   async listFiles(): Promise<string[]> {

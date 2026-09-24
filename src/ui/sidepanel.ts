@@ -38,6 +38,18 @@ boot();
 async function boot(): Promise<void> {
   ai = await loadAiSettings();
   initAiSettingsUI();
+  // Workspace guardada em IndexedDB (partilhada com o popup de captura).
+  // "granted" → logo aberta; "prompt" → o clique em "Abrir workspace" faz
+  // resume() (gesto); "none" → clique faz pick() como sempre.
+  const wsState = await ws.restoreSaved().catch(() => "none" as const);
+  if (wsState === "granted") {
+    files = await ws.listFiles().catch(() => []);
+    status.textContent = `workspace · ${files.length} ficheiros`;
+    log(local("ok", "fs", `workspace restaurada · ${files.length} ficheiros`));
+  } else if (wsState === "prompt") {
+    status.textContent = "workspace guardada — clicar Abrir para autorizar";
+    log(local("info", "fs", "workspace guardada à espera de permissão"));
+  }
   const stored = await chrome.storage.session.get(["blocks", "activity"]);
   for (const ev of (stored.activity as ActivityEvent[] | undefined) ?? []) log(ev);
   for (const b of (stored.blocks as CodeBlock[] | undefined) ?? []) await renderBlock(b);
@@ -47,11 +59,19 @@ async function boot(): Promise<void> {
     if (msg.type === "BLOCKS_READY") {
       for (const b of msg.payload.blocks) void renderBlock(b);
     }
+    if (msg.type === "BLOCK_HANDLED") {
+      // O popup de captura já gravou/rejeitou: remove o cartão daqui para
+      // não haver dupla escrita do mesmo bloco.
+      const card = inbox.querySelector(`[data-block-id="${msg.payload.id}"]`);
+      if (card) card.remove();
+    }
   });
 
   document.getElementById("openWs")?.addEventListener("click", async () => {
     try {
-      await ws.pick();
+      // "prompt" = handle guardado à espera de permissão (resume); "none" = picker.
+      const resumed = wsState === "prompt" ? await ws.resume() : false;
+      if (!resumed) await ws.pick();
       files = await ws.listFiles();
       status.textContent = `workspace · ${files.length} ficheiros`;
       log(local("ok", "fs", `pasta aberta · ${files.length} ficheiros`));
@@ -165,6 +185,9 @@ function ensureOption(sel: HTMLSelectElement, id: string): void {
 }
 
 async function renderBlock(block: CodeBlock): Promise<void> {
+  // Bloco já gravado/rejeitado no popup de captura → não criar cartão aqui.
+  const handled = await chrome.storage.local.get("handledBlocks");
+  if (((handled.handledBlocks as string[] | undefined) ?? []).includes(block.id)) return;
   log(local("ok", "parse", `${block.path} · ${block.language} · ${block.source}`, block.platform));
   log(local("wait", "model", `a escolher destino… (${ai.mode === "off" ? "off" : shortModel(ai.primaryModel)})`, block.platform));
   const plan = await planBlock(block, files, {
@@ -198,6 +221,7 @@ async function renderBlock(block: CodeBlock): Promise<void> {
 
   const card = document.createElement("article");
   card.className = "card";
+  card.dataset.blockId = block.id;
 
   const head = document.createElement("header");
   const title = document.createElement("strong");

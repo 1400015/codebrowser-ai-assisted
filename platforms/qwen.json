@@ -2,9 +2,9 @@
   "id": "qwen",
   "name": "Qwen",
   "hosts": ["chat.qwen.ai", "qianwen.aliyun.com", "www.qianwen.com"],
-  "assistant": ["article"],
+  "assistant": ["div.message-hoc-container", "article"],
   "streaming": ["[data-streaming='true']"],
-  "composer": ["textarea"],
+  "composer": ["textarea", "div[contenteditable='true']"],
   "codeBlock": ["pre code"],
-  "languageLabel": ["pre span"]
+  "languageLabel": ["div.qwen-markdown-code-header > div", "pre span"]
 }

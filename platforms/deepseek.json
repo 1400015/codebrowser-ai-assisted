@@ -2,9 +2,9 @@
   "id": "deepseek",
   "name": "DeepSeek",
   "hosts": ["chat.deepseek.com"],
-  "assistant": ["div.ds-markdown", ".markdown-body"],
+  "assistant": ["div.ds-assistant-message-main-content", "div.ds-markdown", ".markdown-body"],
   "streaming": ["[class*='streaming']"],
   "composer": ["textarea#chat-input", "textarea"],
-  "codeBlock": ["pre code"],
-  "languageLabel": ["pre span"]
+  "codeBlock": ["pre code", "pre"],
+  "languageLabel": ["div.md-code-block-banner span", "pre span"]
 }

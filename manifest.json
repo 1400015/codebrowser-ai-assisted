@@ -36,6 +36,19 @@
       ],
       "js": ["content.js"],
       "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://chatgpt.com/*",
+        "https://chat.openai.com/*",
+        "https://grok.com/*",
+        "https://x.com/*",
+        "https://chat.qwen.ai/*",
+        "https://chat.deepseek.com/*"
+      ],
+      "js": ["src/inject/clipboard-hook.ts"],
+      "world": "MAIN",
+      "run_at": "document_start"
     }
   ]
 }
